@@ -1,10 +1,14 @@
 {
   "name": "telemetryprotocolclient",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "js client for the arduino sensor data telemetry protocol",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "./dist/"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -15,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/peteole/telemetryProtocolClient/issues"
   },
-  "homepage": "https://github.com/peteole/telemetryProtocolClient#readme"
+  "homepage": "https://github.com/peteole/telemetryProtocolClient#readme",
+  "devDependencies": {
+    "typescript": "^4.2.2"
+  },
+  "keywords": ["telemetry", "sensor", "protocol","arduino"]
 }
