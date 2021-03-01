@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../telemetryProtocol"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../protocolTest"
+		}
+	],
+	"settings": {}
+}
