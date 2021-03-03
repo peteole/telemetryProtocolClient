@@ -1,12 +1,7 @@
 export abstract class SensorValue {
     name: string = "";
     size: number = 0;
-    abstract parse(message: DataView): boolean;
-}
-export class BasicSensorValue<T> extends SensorValue {
-    parse(message: DataView): boolean {
-        return true
-    }
+    abstract parse(message: ArrayBuffer): boolean;
 }
 type NumberParser = {
     name: string,
@@ -44,7 +39,8 @@ const parsers: { [k: string]: NumberParser } = {
         size: 4,
         parse: (raw) => raw.getFloat64(0)
     },
-}export class NumberSensorValue extends SensorValue {
+}
+export class NumberSensorValue extends SensorValue {
     parser: NumberParser
     value: number = 0
     constructor(name: string, parser: NumberParser) {
@@ -53,8 +49,25 @@ const parsers: { [k: string]: NumberParser } = {
         this.parser = parser
         this.size = parser.size
     }
-    parse(message: DataView): boolean {
-        this.value = this.parser.parse(message)
+    parse(message: ArrayBuffer): boolean {
+        this.value = this.parser.parse(new DataView(message))
         return true
     }
+}
+export class SensorValueList extends SensorValue {
+    sensorValues: SensorValue[]
+    constructor(sensorValues: SensorValue[]) {
+        super()
+        this.sensorValues = sensorValues
+        this.sensorValues.forEach(val => this.size += val.size)
+    }
+    parse(message: ArrayBuffer): boolean {
+        let position = 0
+        for (let sensorValue of this.sensorValues) {
+            sensorValue.parse(message.slice(position, sensorValue.size))
+            position += sensorValue.size
+        }
+        return position == this.size
+    }
+
 }
