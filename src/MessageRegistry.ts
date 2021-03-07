@@ -1,12 +1,56 @@
 import { Message } from "./Message";
-
+import { isSensorValueDTO, toSensorValue } from "./MessageDTO";
+import { NumberSensorValue, SensorValue } from "./SensorValue";
+interface MessageDescriptionSensorValue extends SensorValue {
+    message: Message | null
+}
+interface MessageDescriptionMessage extends Message {
+    value: MessageDescriptionSensorValue,
+    registry: MessageRegistry
+}
+const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescriptionMessage => {
+    const messageDefinitionMessage: MessageDescriptionMessage = {
+        id: 255,
+        parse: (toParse) => {
+            return messageDefinitionMessage.value.parse(toParse)
+        },
+        value: {
+            name: "message",
+            parse: (message) => {
+                const decoder = new TextDecoder("utf-8")
+                const messageID = new Uint8Array(message)[0]
+                const descriptionString = decoder.decode(message.slice(1))
+                try {
+                    const messageDTO: any = JSON.parse(descriptionString)
+                    if (isSensorValueDTO(messageDTO)) {
+                        const messageSensorValue = toSensorValue(messageDTO)
+                        const newMessage = new Message(messageSensorValue, messageID)
+                        newMessage.value = newMessage.value.replaceBasicSensorValues(registry.basicSensorValues)
+                        registry.basicSensorValues.push(...messageSensorValue.getBasicSensorValues().filter(val => registry.basicSensorValues.findIndex(el => el.name === val.name) === -1))
+                        messageDefinitionMessage.value.message = newMessage
+                    }
+                } catch (error) {
+                    return false
+                }
+                return true
+            },
+            size: Infinity,
+            replaceBasicSensorValues: val => messageDefinitionMessage.value,
+            message: null,
+            getBasicSensorValues: () => []
+        },
+        registry: registry
+    }
+    return messageDefinitionMessage
+}
 export class MessageRegistry {
     private currentMessage: Message | null = null
     private buffer: ArrayBuffer = new ArrayBuffer(0)
     private bufferView = new Uint8Array()
     private currentPosition: number = 0
     private previousByteZero: boolean = false
-    messages: Message[] = []
+    basicSensorValues: NumberSensorValue[] = []
+    messages: Message[] = [getMessageDefinitionMessage(this)]
 
     readData(data: ArrayBuffer) {
         for (let nextValue of new Uint8Array(data)) {
@@ -32,14 +76,11 @@ export class MessageRegistry {
                 }
                 this.previousByteZero = false;
             }
-            else
-            {
-                if (nextValue == 0)
-                {
+            else {
+                if (nextValue == 0) {
                     this.previousByteZero = true;
                 }
-                else
-                {
+                else {
                     this.bufferView[this.currentPosition] = nextValue;
                     this.currentPosition++;
                 }
@@ -50,5 +91,11 @@ export class MessageRegistry {
         this.messages.push(toAdd)
         this.buffer = new ArrayBuffer(Math.max(...this.messages.map(m => m.value.size)))
         this.bufferView = new Uint8Array(this.buffer)
+    }
+    constructor(messages: Message[] = []) {
+        messages.forEach(m => this.addMessage(m))
+    }
+    static fromJSON(json: string) {
+
     }
 }
