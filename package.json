@@ -1,6 +1,6 @@
 {
   "name": "telemetryprotocolclient",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "js client for the arduino sensor data telemetry protocol",
   "main": "dist/index.js",
   "files": [
