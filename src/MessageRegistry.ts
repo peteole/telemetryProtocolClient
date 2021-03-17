@@ -50,7 +50,7 @@ export class MessageRegistry {
     private currentPosition: number = 0
     private previousByteZero: boolean = false
     basicSensorValues: NumberSensorValue[] = []
-    messages: Message[] = [getMessageDefinitionMessage(this)]
+    messages: Message[] = []
 
     readData(data: ArrayBuffer) {
         for (let nextValue of new Uint8Array(data)) {
@@ -93,6 +93,7 @@ export class MessageRegistry {
         this.bufferView = new Uint8Array(this.buffer)
     }
     constructor(messages: Message[] = []) {
+        messages.push(getMessageDefinitionMessage(this))
         messages.forEach(m => this.addMessage(m))
     }
     static fromJSON(json: string) {
