@@ -46,7 +46,7 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
 export class MessageRegistry {
     private currentMessage: Message | null = null
     private buffer: ArrayBuffer = new ArrayBuffer(0)
-    private bufferView = new Uint8Array()
+    private bufferView = new Uint8Array(this.buffer)
     private currentPosition: number = 0
     private previousByteZero: boolean = false
     basicSensorValues: NumberSensorValue[] = []
@@ -65,7 +65,7 @@ export class MessageRegistry {
                 } else if (nextValue == 1) {
                     // End of message reached
                     if (this.currentMessage) {
-                        this.currentMessage.parse(this.buffer);
+                        this.currentMessage.parse(this.buffer.slice(0, this.currentPosition));
                         this.currentMessage = null
                     }
                 }
