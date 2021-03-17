@@ -12,11 +12,11 @@ export class Message {
     }
     parse(toParse: ArrayBuffer): boolean {
         const messageID = new DataView(toParse).getUint8(0)
-        if (messageID != this.id || new Uint8Array(toParse).length != this.value.size + 1) {
-            //return false if wrong id or length (+1 because of message id)
+        if (new Uint8Array(toParse).length != this.value.size) {
+            //return false if wrong length
             return false
         }
-        this.value.parse(toParse.slice(1))
+        this.value.parse(toParse)
         return true
     }
 }

@@ -28,13 +28,22 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                         newMessage.value = newMessage.value.replaceBasicSensorValues(registry.basicSensorValues)
                         registry.basicSensorValues.push(...messageSensorValue.getBasicSensorValues().filter(val => registry.basicSensorValues.findIndex(el => el.name === val.name) === -1))
                         messageDefinitionMessage.value.message = newMessage
+                        const oldIndex = registry.messages.findIndex(m => m.id == newMessage.id);
+                        if (oldIndex != -1) {
+                            console.log("attention, added same message id again!")
+                            for (const basicVal of registry.messages[oldIndex].value.getBasicSensorValues()) {
+                                registry.basicSensorValues = registry.basicSensorValues.filter(val => val == basicVal);
+                            }
+                            registry.messages.splice(oldIndex, 1)
+                        }
+                        registry.addMessage(newMessage)
                     }
                 } catch (error) {
                     return false
                 }
                 return true
             },
-            size: Infinity,
+            size: maxMessageDefinitionSize,
             replaceBasicSensorValues: val => messageDefinitionMessage.value,
             message: null,
             getBasicSensorValues: () => []
@@ -100,3 +109,4 @@ export class MessageRegistry {
 
     }
 }
+const maxMessageDefinitionSize = 10000;

@@ -1,4 +1,4 @@
-import { NumberType, SensorValue, parsers, NumberSensorValue, SensorValueList } from "./SensorValue";
+import { NumberType, SensorValue, parsers, NumberSensorValue, SensorValueList, getNumberParser } from "./SensorValue";
 
 type AbstractSensorValueDTO = {
     name: string;
@@ -44,7 +44,7 @@ export function isSensorValueListDTO(toCheck: any): toCheck is SensorValueListDT
 
 export function toSensorValue(dto: SensorValueDTO): SensorValue {
     if (isBasicSensorValueDTOConstrained(dto)) {
-        return new NumberSensorValue(dto.name, parsers[dto.type])
+        return new NumberSensorValue(dto.name, getNumberParser(dto.type, dto.size))
     } else {
         const sensorValues: SensorValue[] = dto.values.map(val => toSensorValue(val))
         return new SensorValueList(sensorValues)

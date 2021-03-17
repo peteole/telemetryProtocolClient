@@ -5,43 +5,62 @@ export abstract class SensorValue {
     abstract getBasicSensorValues(): NumberSensorValue[];
     replaceBasicSensorValues: (knownSet: SensorValue[]) => SensorValue = (knownSet) => this
 }
-export type NumberType = "uint8" | "uint16" | "int8" | "int16" | "float32" | "float64"
+export type NumberType = "uint8" | "uint16" | "uint32" | "int8" | "int16" | "int32" | "float32" | "float64"
 type NumberParser = {
     name: NumberType,
     size: number,
-    parse: (raw: DataView) => number
+    parse: (raw: ArrayBuffer) => number
 }
 export const parsers: { [k: string]: NumberParser } = {
     uint8: {
         name: "uint8",
         size: 1,
-        parse: (raw) => raw.getUint8(0)
+        parse: (raw) => new Uint8Array(raw)[0]
     },
     uint16: {
         name: "uint16",
         size: 2,
-        parse: (raw) => raw.getUint16(0)
+        parse: (raw) => new Uint16Array(raw)[0]
+    },
+    uint32: {
+        name: "uint32",
+        size: 4,
+        parse: (raw) => new Uint32Array(raw)[0]
     },
     int8: {
         name: "int8",
         size: 1,
-        parse: (raw) => raw.getInt8(0)
+        parse: (raw) => new Int8Array(raw)[0]
     },
     int16: {
         name: "int16",
         size: 2,
-        parse: (raw) => raw.getInt8(0)
+        parse: (raw) => new Int16Array(raw)[0]
+    },
+    int32: {
+        name: "int32",
+        size: 4,
+        parse: (raw) => new Int32Array(raw)[0]
     },
     float32: {
         name: "float32",
         size: 4,
-        parse: (raw) => raw.getFloat32(0)
+        parse: (raw) => new Float32Array(raw)[0]
     },
     float64: {
         name: "float64",
         size: 4,
-        parse: (raw) => raw.getFloat64(0)
+        parse: (raw) => new Float64Array(raw)[0]
     },
+}
+/**
+ * 
+ * @param numberType for example int or float
+ * @param size in bytes
+ * @returns number parser
+ */
+export const getNumberParser = (numberType: string, size: number) => {
+    return parsers[numberType + (8 * size)];
 }
 export class NumberSensorValue extends SensorValue {
     getBasicSensorValues(): NumberSensorValue[] {
@@ -60,7 +79,7 @@ export class NumberSensorValue extends SensorValue {
         }
     }
     parse(message: ArrayBuffer): boolean {
-        this.value = this.parser.parse(new DataView(message))
+        this.value = this.parser.parse(message)
         return true
     }
 }
@@ -83,7 +102,7 @@ export class SensorValueList extends SensorValue {
     parse(message: ArrayBuffer): boolean {
         let position = 0
         for (let sensorValue of this.sensorValues) {
-            sensorValue.parse(message.slice(position, sensorValue.size))
+            sensorValue.parse(message.slice(position, position + sensorValue.size))
             position += sensorValue.size
         }
         return position == this.size
