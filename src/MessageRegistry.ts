@@ -26,14 +26,17 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                         const messageSensorValue = toSensorValue(messageDTO)
                         const newMessage = new Message(messageSensorValue, messageID)
                         newMessage.value = newMessage.value.replaceBasicSensorValues(registry.basicSensorValues)
-                        registry.basicSensorValues.push(...messageSensorValue.getBasicSensorValues().filter(val => registry.basicSensorValues.findIndex(el => el.name === val.name) === -1))
+
+                        //push new basic snesor values dominantly
+                        const newBasicSensorVals=messageSensorValue.getBasicSensorValues();
+                        registry.basicSensorValues=registry.basicSensorValues.filter(val=>newBasicSensorVals.findIndex(el => el.name === val.name)>=0)
+                        registry.basicSensorValues.push(...newBasicSensorVals)
                         messageDefinitionMessage.value.message = newMessage
+
+                        // remove old message with same id if it exists
                         const oldIndex = registry.messages.findIndex(m => m.id == newMessage.id);
                         if (oldIndex != -1) {
                             console.log("attention, added same message id again!")
-                            for (const basicVal of registry.messages[oldIndex].value.getBasicSensorValues()) {
-                                registry.basicSensorValues = registry.basicSensorValues.filter(val => val == basicVal);
-                            }
                             registry.messages.splice(oldIndex, 1)
                         }
                         registry.addMessage(newMessage)
