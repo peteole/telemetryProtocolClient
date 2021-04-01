@@ -29,7 +29,7 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
 
                         //push new basic snesor values dominantly
                         const newBasicSensorVals=messageSensorValue.getBasicSensorValues();
-                        registry.basicSensorValues=registry.basicSensorValues.filter(val=>newBasicSensorVals.findIndex(el => el.name === val.name)>=0)
+                        registry.basicSensorValues=registry.basicSensorValues.filter(val=>newBasicSensorVals.findIndex(el => el.name === val.name)===-1)
                         registry.basicSensorValues.push(...newBasicSensorVals)
                         messageDefinitionMessage.value.message = newMessage
 
