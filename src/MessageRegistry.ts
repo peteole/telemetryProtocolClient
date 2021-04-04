@@ -66,7 +66,7 @@ export class MessageRegistry {
     private currentPosition: number = 0
     private previousByteZero: boolean = false
 
-    private streamMessage: StreamMessage
+    streamMessage: StreamMessage
 
     basicSensorValues: NumberSensorValue[] = []
     messages: Message[] = []

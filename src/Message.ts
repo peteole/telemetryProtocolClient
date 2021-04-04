@@ -11,15 +11,17 @@ export class Message {
         this.value = value
     }
     parse(toParse: ArrayBuffer): boolean {
-        const messageID = new DataView(toParse).getUint8(0)
         if (new Uint8Array(toParse).length != this.value.size) {
-            //return false if wrong length
-            return false
+            //return false if wrong length or stream with too big length
+            if (this.value.name !== "stream" || new Uint8Array(toParse).length > this.value.size)
+                return false
         }
         this.value.parse(toParse)
         return true
     }
 }
+
+const STREAM_MESSAGE_ID = 254
 class StreamMessageSensorValue extends SensorValue {
     size: number
     getBasicSensorValues() { return [] }
@@ -27,10 +29,14 @@ class StreamMessageSensorValue extends SensorValue {
     outputBuffer: string[] = []
     onMessage: (s: string) => void
     parse(m: ArrayBuffer) {
-        this.onMessage(new TextDecoder().decode(m))
+        //remove zero-byte with slice
+        this.onMessage(new TextDecoder().decode(m.slice(0, m.byteLength - 1)))
         return true;
     }
-    serialize() { return new Uint8Array(0) }
+    serialize() {
+        console.error("You cannot serialize a string message!");
+        return new ArrayBuffer(0)
+    }
     constructor(size = 500, onMessage = (s: string) => console.log(s)) {
         super()
         this.size = size
@@ -40,7 +46,7 @@ class StreamMessageSensorValue extends SensorValue {
 export class StreamMessage extends Message {
     _value: StreamMessageSensorValue
     constructor(onMessage = (s: string) => console.log(s)) {
-        super(new StreamMessageSensorValue(500, onMessage), 254);
+        super(new StreamMessageSensorValue(500, onMessage), STREAM_MESSAGE_ID);
         this._value = this.value as StreamMessageSensorValue
     }
     append(message: string) {
