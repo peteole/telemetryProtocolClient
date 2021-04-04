@@ -1,4 +1,4 @@
-import { Message } from "./Message";
+import { Message, StreamMessage } from "./Message";
 import { isSensorValueDTO, toSensorValue } from "./MessageDTO";
 import { NumberSensorValue, SensorValue } from "./SensorValue";
 interface MessageDescriptionSensorValue extends SensorValue {
@@ -28,8 +28,8 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                         newMessage.value = newMessage.value.replaceBasicSensorValues(registry.basicSensorValues)
 
                         //push new basic snesor values dominantly
-                        const newBasicSensorVals=messageSensorValue.getBasicSensorValues();
-                        registry.basicSensorValues=registry.basicSensorValues.filter(val=>newBasicSensorVals.findIndex(el => el.name === val.name)===-1)
+                        const newBasicSensorVals = messageSensorValue.getBasicSensorValues();
+                        registry.basicSensorValues = registry.basicSensorValues.filter(val => newBasicSensorVals.findIndex(el => el.name === val.name) === -1)
                         registry.basicSensorValues.push(...newBasicSensorVals)
                         messageDefinitionMessage.value.message = newMessage
 
@@ -46,6 +46,10 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                 }
                 return true
             },
+            serialize: () => {
+                // this tells the sender to resend all messag definitions
+                return new Uint8Array([])
+            },
             size: maxMessageDefinitionSize,
             replaceBasicSensorValues: val => messageDefinitionMessage.value,
             message: null,
@@ -61,6 +65,9 @@ export class MessageRegistry {
     private bufferView = new Uint8Array(this.buffer)
     private currentPosition: number = 0
     private previousByteZero: boolean = false
+
+    private streamMessage: StreamMessage
+
     basicSensorValues: NumberSensorValue[] = []
     messages: Message[] = []
 
@@ -104,12 +111,28 @@ export class MessageRegistry {
         this.buffer = new ArrayBuffer(Math.max(...this.messages.map(m => m.value.size)))
         this.bufferView = new Uint8Array(this.buffer)
     }
-    constructor(messages: Message[] = []) {
+    constructor(messages: Message[] = [], onMessage = (s: string) => console.log(s)) {
         messages.push(getMessageDefinitionMessage(this))
+        this.streamMessage = new StreamMessage(onMessage)
+        messages.push(this.streamMessage)
         messages.forEach(m => this.addMessage(m))
     }
-    static fromJSON(json: string) {
 
+    set onMessage(onMessage: (s: string) => void) {
+        this.streamMessage._value.onMessage = onMessage
+    }
+
+    /** get Arraybuffer which is ready to be sent to the microcontroller from message */
+    encodeMessage(message: Message) {
+        const toEncode = new Uint8Array(message.value.serialize())
+        const target: number[] = [0, message.id]
+        for (const byte of toEncode) {
+            target.push(byte);
+            if (byte === 0)
+                target.push(0)
+        }
+        target.push(0, 1)
+        return new Uint8Array(target)
     }
 }
 const maxMessageDefinitionSize = 10000;
