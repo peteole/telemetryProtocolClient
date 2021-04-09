@@ -27,7 +27,7 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                         const newMessage = new Message(messageSensorValue, messageID)
                         newMessage.value = newMessage.value.replaceBasicSensorValues(registry.basicSensorValues)
 
-                        //push new basic snesor values dominantly
+                        //push new basic sensor values dominantly
                         const newBasicSensorVals = messageSensorValue.getBasicSensorValues();
                         registry.basicSensorValues = registry.basicSensorValues.filter(val => newBasicSensorVals.findIndex(el => el.name === val.name) === -1)
                         registry.basicSensorValues.push(...newBasicSensorVals)
@@ -47,7 +47,7 @@ const getMessageDefinitionMessage = (registry: MessageRegistry): MessageDescript
                 return true
             },
             serialize: () => {
-                // this tells the sender to resend all messag definitions
+                // this tells the sender to resend all message definitions. There does not need to be any content in this message.
                 return new Uint8Array([])
             },
             size: maxMessageDefinitionSize,
@@ -66,6 +66,9 @@ export class MessageRegistry {
     private currentPosition: number = 0
     private previousByteZero: boolean = false
 
+    messageDefinitionMessage: Message
+    /**called when an unknown message is recieved. May be used to request the data schema in this case. */
+    onUnknownMessage: null | (() => void) = null
     streamMessage: StreamMessage
 
     basicSensorValues: NumberSensorValue[] = []
@@ -91,7 +94,12 @@ export class MessageRegistry {
                 else {
                     //start of new message
                     const index = this.messages.findIndex(m => m.id == nextValue)
-                    this.currentMessage = index == -1 ? null : this.messages[index]
+                    if (index == -1) {
+                        this.currentMessage = null
+                        this.onUnknownMessage?.()
+                    } else {
+                        this.currentMessage = this.messages[index]
+                    }
                 }
                 this.previousByteZero = false;
             }
@@ -112,7 +120,8 @@ export class MessageRegistry {
         this.bufferView = new Uint8Array(this.buffer)
     }
     constructor(messages: Message[] = [], onMessage = (s: string) => console.log(s)) {
-        messages.push(getMessageDefinitionMessage(this))
+        this.messageDefinitionMessage = getMessageDefinitionMessage(this)
+        messages.push(this.messageDefinitionMessage)
         this.streamMessage = new StreamMessage(onMessage)
         messages.push(this.streamMessage)
         messages.forEach(m => this.addMessage(m))
