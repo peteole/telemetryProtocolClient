@@ -17,6 +17,7 @@ export class Message {
                 return false
         }
         this.value.parse(toParse)
+        this.value.onUpdate?.();
         return true
     }
 }

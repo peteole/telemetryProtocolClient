@@ -1,6 +1,8 @@
 export abstract class SensorValue {
     name: string = "";
     size: number = 0;
+
+    onUpdate?: () => void = () => { };
     abstract parse(message: ArrayBuffer): boolean;
     abstract getBasicSensorValues(): NumberSensorValue[];
     replaceBasicSensorValues: (knownSet: SensorValue[]) => SensorValue = (knownSet) => this;
@@ -117,6 +119,7 @@ export class SensorValueList extends SensorValue {
         for (let sensorValue of this.sensorValues) {
             sensorValue.parse(message.slice(position, position + sensorValue.size))
             position += sensorValue.size
+            sensorValue.onUpdate?.();
         }
         return position == this.size
     }
